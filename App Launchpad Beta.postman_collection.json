@@ -1,0 +1,562 @@
+{
+	"info": {
+		"_postman_id": "aa6b8031-4617-412a-8400-c4e0c3451b15",
+		"name": "App Launchpad Beta",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Provider login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7204c661-5978-4684-a6df-c58a11c2c73a",
+						"exec": [
+							"pm.environment.set(\"vcd_jwt_token\", postman.getResponseHeader(\"X-VMWARE-VCLOUD-ACCESS-TOKEN\"));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "{{pa_password}}",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "{{pa_user}}@system",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/*+xml;version=30.0"
+					},
+					{
+						"key": "",
+						"type": "text",
+						"value": "",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://{{vcd_host}}/api/sessions",
+					"protocol": "https",
+					"host": [
+						"{{vcd_host}}"
+					],
+					"path": [
+						"api",
+						"sessions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Query provider org",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7204c661-5978-4684-a6df-c58a11c2c73a",
+						"exec": [
+							"pm.test(\"Get provider org id\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"provider_org_id\", jsonData.record[0].id.substring(15));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{vcd_jwt_token}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/*+json;version=32.0",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://{{vcd_host}}/api/admin/orgs/query?format=idrecords&filter=name==AppLaunchpad",
+					"protocol": "https",
+					"host": [
+						"{{vcd_host}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"orgs",
+						"query"
+					],
+					"query": [
+						{
+							"key": "format",
+							"value": "idrecords"
+						},
+						{
+							"key": "filter",
+							"value": "name==AppLaunchpad"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Query catalog items",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7204c661-5978-4684-a6df-c58a11c2c73a",
+						"exec": [
+							"pm.test(\"Get bitnami app ids\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    for (var item of jsonData.record) {",
+							"        if (item.name.toLowerCase().indexOf(\"sql\") >= 0) {",
+							"            pm.environment.set(\"app-sql-id\", item.entity.substring(24));",
+							"        }",
+							"        if (item.name.toLowerCase().indexOf(\"wordpress\") >= 0) {",
+							"            pm.environment.set(\"app-wordpress-id\", item.entity.substring(24));",
+							"        }",
+							"        if (item.name.toLowerCase().indexOf(\"lamp\") >= 0) {",
+							"            pm.environment.set(\"app-lampstack-id\", item.entity.substring(24));",
+							"        }",
+							"        if (item.name.toLowerCase().indexOf(\"gitlab\") >= 0) {",
+							"            pm.environment.set(\"app-gitlab-id\", item.entity.substring(24));",
+							"        }",
+							"        if (item.name.toLowerCase().indexOf(\"jenkins\") >= 0) {",
+							"            pm.environment.set(\"app-jenkins-id\", item.entity.substring(24));",
+							"        }",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{vcd_jwt_token}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/*+json;version=32.0"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-TENANT-CONTEXT",
+						"value": "{{provider_org_id}}",
+						"type": "text"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-AUTH-CONTEXT",
+						"value": "{{provider_org_name}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://{{vcd_host}}/api/query?type=catalogItem&format=idrecords&filter=catalogName=={{bitnami_catalog_name}}",
+					"protocol": "https",
+					"host": [
+						"{{vcd_host}}"
+					],
+					"path": [
+						"api",
+						"query"
+					],
+					"query": [
+						{
+							"key": "type",
+							"value": "catalogItem"
+						},
+						{
+							"key": "format",
+							"value": "idrecords"
+						},
+						{
+							"key": "filter",
+							"value": "catalogName=={{bitnami_catalog_name}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4a. Set metadata for app: mysql",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7204c661-5978-4684-a6df-c58a11c2c73a",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{vcd_jwt_token}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/*+json;version=32.0"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-TENANT-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_id}}"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-AUTH-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_name}}"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/vnd.vmware.vcloud.metadata+json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"metadataEntry\": \n  [{\n      \"otherAttributes\": {},\n      \"key\": \"title\",\n      \"value\": null,\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"MySQL\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"summary\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"This MySQL virtual machine is secure, up-to-date, and pre-configured to work out of the box.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"description\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"MySQL is a fast, scalable, and easy to use relational database system. Whether you are a web developer, ISV, or large enterprise, it is a cost-effectively choice for mission-critical and heavy-load production systems. It can scale to thousands of queries per second making it ideal for web servers that manage large amounts of data. MySQL is primarily adopted for its quick processing, proven reliability, and performance. It is an essential component in most of the PHP-based applications.\\r\\n\\r\\nThis open source solution is packaged by Bitnami. Learn how to install, configure, and manage it at docs.bitnami.com. For deployment issues, reach out our support team at community.bitnami.com.\\r\\n\\r\\nWhy use Bitnami Apps?\\r\\n\\r\\nBitnami certified images are always up-to-date, secure, and built to work right out of the box. \\r\\n\\r\\nBitnami packages applications following industry standards and continuously monitors all components and libraries for vulnerabilities and application updates. When any security threat or update is identified, Bitnami automatically repackages the applications and pushes the latest versions to the cloud marketplaces.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": null,\n      \"key\": \"version\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"8.0.19-0\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"logo\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://dyltqmyl993wv.cloudfront.net/assets/stacks/mysql/img/mysql-stack-110x117.png\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"screenshots\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://bitnami.com/stack/mysql/default_screenshot\"\n      },\n      \"vCloudExtension\": []\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "https://{{vcd_host}}/api/vAppTemplate/vappTemplate-5c305a2a-f970-4584-848c-6489da516c9c/metadata",
+					"protocol": "https",
+					"host": [
+						"{{vcd_host}}"
+					],
+					"path": [
+						"api",
+						"vAppTemplate",
+						"vappTemplate-5c305a2a-f970-4584-848c-6489da516c9c",
+						"metadata"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4b. Set metadata for app: wordpress",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7204c661-5978-4684-a6df-c58a11c2c73a",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{vcd_jwt_token}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/*+json;version=32.0"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-TENANT-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_id}}"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-AUTH-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_name}}"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/vnd.vmware.vcloud.metadata+json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"metadataEntry\": \n  [{\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"title\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"WordPress  - Beta for Bitnami\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"summary\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"This WordPress virtual machine is secure, up-to-date, and pre-configured to work out of the box.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"description\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"WordPress powers over 25% of all websites on the internet, making it the world's most popular blogging and content management platform. It is free and open source software developed entirely by its community, who have contributed over 45,000 themes, plugins, and widgets that enable an unlimited combination of features. Users can easily create and edit static webpages and blog posts using its intuitive editor. Without even thinking about details like browser compatibility or responsiveness, content creators are free to create and format text, images, and layout on every page and post.\\r\\n\\r\\nMore tech savvy will appreciate having the ability to easily switch back and forth between a WYSIWYG editor and raw html for every page, and the underlying PHP that runs it all is available right through the interface.\\r\\n\\r\\nWhy use Bitnami Apps? \\r\\n\\r\\nBitnami certified images are always up-to-date, secure, and built to work right out of the box. \\r\\n\\r\\nBitnami packages applications following industry standards and continuously monitors all components and libraries for vulnerabilities and application updates. When any security threat or update is identified, Bitnami automatically repackages the applications and pushes the latest versions to the cloud marketplaces.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"version\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"5.3.2-2-r01\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"logo\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://dyltqmyl993wv.cloudfront.net/assets/stacks/wordpress/img/wordpress-stack-110x117.png\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"screenshots\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://bitnami.com/stack/wordpress/default_screenshot\"\n      },\n      \"vCloudExtension\": []\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "https://{{vcd_host}}/api/vAppTemplate/vappTemplate-{{app-wordpress-id}}/metadata",
+					"protocol": "https",
+					"host": [
+						"{{vcd_host}}"
+					],
+					"path": [
+						"api",
+						"vAppTemplate",
+						"vappTemplate-{{app-wordpress-id}}",
+						"metadata"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4c. Set metadata for app: lampstack",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7204c661-5978-4684-a6df-c58a11c2c73a",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{vcd_jwt_token}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/*+json;version=32.0"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-TENANT-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_id}}"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-AUTH-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_name}}"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/vnd.vmware.vcloud.metadata+json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"metadataEntry\": \n  [{\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"title\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"LAMP  - Beta for Bitnami\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"summary\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"This LAMP blueprint is secure, up-to-date, and pre-configured to work out of the box.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"description\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"LAMP enables you to quickly start building your websites and applications by providing a coding framework. As a developer, it provides standalone project directories to store your applications. \\r\\n\\r\\nThis image is configured for production environments. It includes SSL auto-configuration with Let's Encrypt certificates, and the latest releases of PHP, Apache, and MySQL on Linux. This application also includes phpMyAdmin, PHP main modules, Zend, Symfony, CodeIgniter, CakePHP, and Laravel frameworks.\\r\\n\\r\\nThis open source solution is packaged by Bitnami. Learn how to install, configure, and manage it at docs.bitnami.com. For deployment issues, reach out our support team at community.bitnami.com. Why use Bitnami Apps? Bitnami certifies that our images are secure, up-to-date, and packaged using industry best practices. With Bitnami, you can trust what is in the app you're launching. We monitor all the applications we package for vulnerabilities, outdated components and libraries, and application updates. When any of these are identified, we patch and release every affected listing within a couple of days.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"version\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"7.3.13-0\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"logo\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://dyltqmyl993wv.cloudfront.net/assets/stacks/lampstack/img/lampstack-stack-110x117.png\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"screenshots\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://bitnami.com/stack/lampstack/default_screenshot\"\n      },\n      \"vCloudExtension\": []\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "https://{{vcd_host}}/api/vAppTemplate/vappTemplate-{{app-lampstack-id}}/metadata",
+					"protocol": "https",
+					"host": [
+						"{{vcd_host}}"
+					],
+					"path": [
+						"api",
+						"vAppTemplate",
+						"vappTemplate-{{app-lampstack-id}}",
+						"metadata"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4d. Set metadata for app: gitlab",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7204c661-5978-4684-a6df-c58a11c2c73a",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{vcd_jwt_token}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/*+json;version=32.0"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-TENANT-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_id}}"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-AUTH-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_name}}"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/vnd.vmware.vcloud.metadata+json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"metadataEntry\": \n  [{\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"title\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"GitLab CE  - Beta for Bitnami\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"summary\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"This GitLab CE blueprint is secure, up-to-date, and pre-configured to work out of the box.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"description\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"GitLab Community Edition (CE) is a cloud-based Git repository and version control system. It is used by software development teams to consolidate source code, track and manage releases, increase code quality, deploy code changes, and track the evolution of software over time. It includes a fully functional Continuous Integration and Delivery (CI/CD) system for building, testing, and deploying code updates while your team is producing new code. \\r\\n\\r\\nGitLab CE supports private registry for Docker containers enabling teams to streamline updates for production deployments that are running on a microservices architecture. \\r\\n\\r\\nThis open source solution is packaged by Bitnami. Learn how to install, configure, and manage it at docs.bitnami.com. For deployment issues, reach out our support team at community.bitnami.com. Why use Bitnami Apps? Bitnami certifies that our images are secure, up-to-date, and packaged using industry best practices. With Bitnami, you can trust what is in the app you're launching. We monitor all the applications we package for vulnerabilities, outdated components and libraries, and application updates. When any of these are identified, we patch and release every affected listing within a couple of days.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"version\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"12.7.5-0\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"logo\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://dyltqmyl993wv.cloudfront.net/assets/stacks/gitlab/img/gitlab-stack-110x117.png\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"screenshots\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://bitnami.com/stack/gitlab/default_screenshot\"\n      },\n      \"vCloudExtension\": []\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "https://{{vcd_host}}/api/vAppTemplate/vappTemplate-{{app-gitlab-id}}/metadata",
+					"protocol": "https",
+					"host": [
+						"{{vcd_host}}"
+					],
+					"path": [
+						"api",
+						"vAppTemplate",
+						"vappTemplate-{{app-gitlab-id}}",
+						"metadata"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4e. Set metadata for app: jenkins",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7204c661-5978-4684-a6df-c58a11c2c73a",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{vcd_jwt_token}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/*+json;version=32.0"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-TENANT-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_id}}"
+					},
+					{
+						"key": "X-VMWARE-VCLOUD-AUTH-CONTEXT",
+						"type": "text",
+						"value": "{{provider_org_name}}"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/vnd.vmware.vcloud.metadata+json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"metadataEntry\": \n  [{\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"title\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"Jenkins\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"summary\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"This Jenkins virtual machine is secure, up-to-date, and pre-configured to work out of the box.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"description\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"Jenkins is an open source automation server that helps you automate the building, testing, and deployment of any project across multiple platforms. Jenkins helps to avoid breaking changes so that you can save time and ensure the delivery of high-quality software. Its web interface provides an easy way to manage and test your applications before taking them to production. This image bundles the latest versions of community-recommended plugins, including pipelines and Git integration.\\r\\n\\r\\nThis open source solution is packaged by Bitnami. Learn how to install, configure, and manage it at docs.bitnami.com. For deployment issues, reach out our support team at community.bitnami.com.\\r\\n\\r\\nWhy use Bitnami Apps? \\r\\n\\r\\nBitnami certified images are always up-to-date, secure, and built to work right out of the box. \\r\\n\\r\\nBitnami packages applications following industry standards and continuously monitors all components and libraries for vulnerabilities and application updates. When any security threat or update is identified, Bitnami automatically repackages the applications and pushes the latest versions to the cloud marketplaces.\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"version\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"2.190.1_0\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"logo\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://dyltqmyl993wv.cloudfront.net/assets/stacks/jenkins/img/jenkins-stack-110x117.png\"\n      },\n      \"vCloudExtension\": []\n    },\n    {\n      \"otherAttributes\": {},\n      \"domain\": {\n        \"value\": \"SYSTEM\",\n        \"visibility\": \"READONLY\"\n      },\n      \"key\": \"screenshots\",\n      \"value\": null,\n      \"typedValue\": {\n        \"_type\": \"MetadataStringValue\",\n        \"value\": \"https://bitnami.com/stack/jenkins/default_screenshot\"\n      },\n      \"vCloudExtension\": []\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "https://{{vcd_host}}/api/vAppTemplate/vappTemplate-{{app-jenkins-id}}/metadata",
+					"protocol": "https",
+					"host": [
+						"{{vcd_host}}"
+					],
+					"path": [
+						"api",
+						"vAppTemplate",
+						"vappTemplate-{{app-jenkins-id}}",
+						"metadata"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
