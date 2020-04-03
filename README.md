@@ -1,0 +1,1 @@
+# Postman-Samples-for-Setting-App-Launchpad-In-House-Application-Metadata
